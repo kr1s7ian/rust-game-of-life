@@ -1,4 +1,4 @@
-use crate::common::Vec2;
+use crate::common::{Component, Vec2};
 use crate::olc_pixel_game_engine as olc;
 use rand::Rng;
 
@@ -6,6 +6,7 @@ use rand::Rng;
 pub struct Gof {
     content: Vec<u8>,
     dimensions: Vec2<usize>,
+    timer: f32,
 }
 
 impl Gof {
@@ -13,13 +14,17 @@ impl Gof {
         let height: usize = (olc::screen_height()) as usize;
         let width: usize = (olc::screen_width()) as usize;
         let size: usize = width * height;
-        Self {
+        let mut result = Self {
             dimensions: Vec2 {
                 x: width,
                 y: height,
             },
             content: vec![0u8; size],
-        }
+            timer: 0.0,
+        };
+        result.start();
+
+        result
     }
 
     pub fn randomize(&mut self) {
@@ -57,25 +62,52 @@ impl Gof {
         result - self.get_cell(x, y)
     }
 
-  pub fn tick(&mut self) {
-    let mut new = self.clone();
+    pub fn tick(&mut self) {
+        let mut new = self.clone();
 
-    for x in 1..self.dimensions.x-1 {
-      for y in 1..self.dimensions.y -1 {
-        let cell = self.get_cell(x, y);
-        let neighbors = self.neighbors(x, y);
+        for x in 1..self.dimensions.x - 1 {
+            for y in 1..self.dimensions.y - 1 {
+                let cell = self.get_cell(x, y);
+                let neighbors = self.neighbors(x, y);
 
-        if *cell == 0u8 && neighbors == 3 {
-          new.set_cell(x, y, 1);
-        } else if *cell == 1u8 && (neighbors < 2 || neighbors > 3) {
-          new.set_cell(x, y, 0);
-        } else {
-          new.set_cell(x, y, *cell);
+                if *cell == 0u8 && neighbors == 3 {
+                    new.set_cell(x, y, 1);
+                } else if *cell == 1u8 && (neighbors < 2 || neighbors > 3) {
+                    new.set_cell(x, y, 0);
+                } else {
+                    new.set_cell(x, y, *cell);
+                }
+            }
         }
-      }
+        self.content = new.content;
     }
-    self.content = new.content;
-  }
+}
+
+impl Component for Gof {
+
+    fn start(&mut self) {
+        self.randomize();
+    }
+
+    fn update(&mut self, elapsed_time: f32) {
+        self.timer += elapsed_time;
+        if self.timer >= 0.1 {
+            self.timer = 0.0;
+            self.tick();
+        }
+    }
+
+    fn draw(&mut self) {
+        for y in 0..olc::screen_width() {
+            for x in 0..olc::screen_height() {
+                let mut p = olc::Pixel::rgb(255u8, 255u8, 255u8);
+                if *self.get_cell(x as usize, y as usize) == 1 {
+                    p = olc::Pixel::rgb(255u8, 140u8, 140u8);
+                }
+                olc::draw(x, y, p);
+            }
+        }
+    }
 }
 
 mod tests {
