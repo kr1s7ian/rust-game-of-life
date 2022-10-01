@@ -2,11 +2,11 @@ use crate::common::{Component, Vec2};
 use crate::olc_pixel_game_engine as olc;
 use rand::Rng;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Gof {
     content: Vec<u8>,
     dimensions: Vec2<usize>,
-    timer: f32,
+    offset: Vec2<i32>
 }
 
 impl Gof {
@@ -20,7 +20,8 @@ impl Gof {
                 y: height,
             },
             content: vec![0u8; size],
-            timer: 0.0,
+            offset: Vec2{x: 0, y: 0},
+
         };
         result.start();
 
@@ -45,6 +46,10 @@ impl Gof {
         let i: usize = y * self.dimensions.x + x;
         self.content[i] = value;
         return &self.content[i];
+    }
+
+    pub fn set_offset(&mut self, offset: Vec2<i32>) {
+        self.offset = offset;
     }
 
     pub fn neighbors(&self, x: usize, y: usize) -> u8 {
@@ -85,16 +90,17 @@ impl Gof {
 
 impl Component for Gof {
 
+    fn id(&self) -> Option<u32> {
+        Some(0u32)
+    }
+
     fn start(&mut self) {
         self.randomize();
     }
 
     fn update(&mut self, elapsed_time: f32) {
-        self.timer += elapsed_time;
-        if self.timer >= 0.1 {
-            self.timer = 0.0;
-            self.tick();
-        }
+        self.tick();
+        self.draw();
     }
 
     fn draw(&mut self) {
@@ -104,7 +110,7 @@ impl Component for Gof {
                 if *self.get_cell(x as usize, y as usize) == 1 {
                     p = olc::Pixel::rgb(255u8, 140u8, 140u8);
                 }
-                olc::draw(x, y, p);
+                olc::draw(self.offset.x + x, self.offset.y + y, p);
             }
         }
     }
@@ -123,12 +129,12 @@ mod tests {
         }
         let result = gof.neighbors(1, 1);
         assert_eq!(result, 8);
+
         for x in 0..3 {
             for y in 0..3 {
                 gof.set_cell(x, y, 0);
             }
         }
-
         for y in 0..3 {
             gof.set_cell(0, y, 1);
         }
