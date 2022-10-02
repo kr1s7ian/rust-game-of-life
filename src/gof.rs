@@ -1,12 +1,12 @@
 use crate::common::{Component, Vec2};
-use crate::olc_pixel_game_engine as olc;
+use crate::{olc_pixel_game_engine as olc, Game};
 use rand::Rng;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone)]
 pub struct Gof {
     content: Vec<u8>,
     dimensions: Vec2<usize>,
-    offset: Vec2<i32>
+    offset: Vec2<f32>,
 }
 
 impl Gof {
@@ -20,8 +20,7 @@ impl Gof {
                 y: height,
             },
             content: vec![0u8; size],
-            offset: Vec2{x: 0, y: 0},
-
+            offset: Vec2{x: 0.0, y: 0.0},
         };
         result.start();
 
@@ -46,10 +45,6 @@ impl Gof {
         let i: usize = y * self.dimensions.x + x;
         self.content[i] = value;
         return &self.content[i];
-    }
-
-    pub fn set_offset(&mut self, offset: Vec2<i32>) {
-        self.offset = offset;
     }
 
     pub fn neighbors(&self, x: usize, y: usize) -> u8 {
@@ -98,27 +93,43 @@ impl Component for Gof {
         self.randomize();
     }
 
+    fn poll_inputs(&mut self, elapsed_time: f32) {
+        const PAN_SPEED: f32 = 100.0;
+        if olc::get_key(olc::Key::A).held {
+            self.offset.x += PAN_SPEED * elapsed_time;
+        }
+        if olc::get_key(olc::Key::D).held {
+            self.offset.x -= PAN_SPEED * elapsed_time;
+        }
+        if olc::get_key(olc::Key::W).held {
+            self.offset.y += PAN_SPEED * elapsed_time;
+        }
+        if olc::get_key(olc::Key::S).held {
+            self.offset.y -= PAN_SPEED * elapsed_time;
+        }
+    }
+
     fn update(&mut self, elapsed_time: f32) {
         self.tick();
-        self.draw();
     }
 
     fn draw(&mut self) {
-        for y in 0..olc::screen_width() {
-            for x in 0..olc::screen_height() {
+        for y in 0..self.dimensions.y {
+            for x in 0..self.dimensions.x {
                 let mut p = olc::Pixel::rgb(255u8, 255u8, 255u8);
                 if *self.get_cell(x as usize, y as usize) == 1 {
                     p = olc::Pixel::rgb(255u8, 140u8, 140u8);
                 }
-                olc::draw(self.offset.x + x, self.offset.y + y, p);
+                let offset_x = (self.offset.x + x as f32) as i32;
+                let offset_y = (self.offset.y + y as f32) as i32;
+                olc::draw(offset_x, offset_y, p);
             }
         }
     }
 }
 
 mod tests {
-    use super::*;
-
+    use super::Gof;
     #[test]
     fn test_neighbors() {
         let mut gof = Gof::new();
