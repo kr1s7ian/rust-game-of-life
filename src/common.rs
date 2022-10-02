@@ -16,7 +16,11 @@ pub trait Component {
 
   }
 
-  fn update(&mut self, elapsed_time: f32) {
+  fn poll_inputs(&mut self, _elapsed_time: f32) {
+
+  }
+
+  fn update(&mut self, _elapsed_time: f32) {
 
   }
 
