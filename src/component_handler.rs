@@ -1,4 +1,6 @@
 
+use std::any::{Any, TypeId, self};
+
 use crate::common::Component;
 
 pub struct ComponentHandler {
@@ -16,17 +18,8 @@ impl ComponentHandler {
 
     pub fn add_component<T: Component + 'static>(&mut self, component: T)
     {
-        let mut component = Box::new(component);
+        let component = Box::new(component);
         self.components.push(component);
-    }
-
-    pub fn get_component(&mut self, id: u32) -> Option<&mut Box<dyn Component>> {
-        for component in self.components.iter_mut() {
-            if id == component.id().unwrap() {
-                return Some(component)
-            }
-        }
-        None
     }
 
     pub fn update(&mut self, elapsed_time: f32) {
@@ -39,6 +32,13 @@ impl ComponentHandler {
             }
         }
     }
+
+    pub fn poll_inputs(&mut self, elapsed_time: f32) {
+        for component in self.components.iter_mut() {
+            component.poll_inputs(elapsed_time);
+        }
+    }
+
 
     pub fn draw(&mut self) {
         for component in self.components.iter_mut() {
