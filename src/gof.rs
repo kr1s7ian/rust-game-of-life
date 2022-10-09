@@ -90,8 +90,8 @@ impl Gof {
 
     #[inline]
     pub fn screen_to_world_point(&self, x: i32, y: i32) -> Vec2<i32> {
-        let world_x = (x + self.offset.x as i32) * self.zoom as i32;
-        let world_y = (y + self.offset.y as i32) * self.zoom as i32;
+        let world_x = (x / self.zoom) - self.offset.x as i32;
+        let world_y = (y / self.zoom) - self.offset.y as i32;
 
         Vec2{x: world_x, y: world_y}
     }
@@ -130,6 +130,7 @@ impl Component for Gof {
 
         // change zoom with SCROLLWHEEL
         let scroll = olc::get_mouse_wheel();
+        let old_pos = self.screen_to_world_point(olc::get_mouse_x(), olc::get_mouse_y());
         if scroll > 1 {
             self.zoom += 1;
         } else if scroll < -1 {
@@ -137,32 +138,38 @@ impl Component for Gof {
                 self.zoom -= 1;
             }
         }
+        // calculate mouse position difference on then subtract it to
+        // the rendering offset after each zoom to zoom under cursor
+        let new_pos = self.screen_to_world_point(olc::get_mouse_x(), olc::get_mouse_y());
+        let diff_x = old_pos.x - new_pos.x;
+        let diff_y = old_pos.y - new_pos.y;
+        println!("x: {}, y: {}", diff_x, diff_y);
+        self.offset.x -= diff_x as f32;
+        self.offset.y -= diff_y as f32;
 
         // pan around the world with WASD keys
-        const PAN_SPEED: f32 = 100.0;
+        let pan_speed: f32 = 100.0 / (self.zoom as f32 * 0.25);
         if olc::get_key(olc::Key::A).held {
-            self.offset.x += PAN_SPEED * elapsed_time;
+            self.offset.x += pan_speed * elapsed_time;
         }
         if olc::get_key(olc::Key::D).held {
-            self.offset.x -= PAN_SPEED * elapsed_time;
+            self.offset.x -= pan_speed * elapsed_time;
         }
         if olc::get_key(olc::Key::W).held {
-            self.offset.y += PAN_SPEED * elapsed_time;
+            self.offset.y += pan_speed * elapsed_time;
         }
         if olc::get_key(olc::Key::S).held {
-            self.offset.y -= PAN_SPEED * elapsed_time;
+            self.offset.y -= pan_speed * elapsed_time;
         }
 
         // if left mouse button is being pressed, make the cell under the cursor alive
         if olc::get_mouse(0).held {
-            let (mx, my) = (
-                (olc::get_mouse_x() as f32 - self.offset.x) as i32,
-                (olc::get_mouse_y() as f32 - self.offset.y) as i32,
-            );
-            if (mx > 0 && mx < self.dimensions.x as i32)
-                && (my > 0 && my < self.dimensions.y as i32)
+            let (mx, my) = (olc::get_mouse_x(), olc::get_mouse_y());
+            let coords = self.screen_to_world_point(mx, my);
+            if (coords.x > 0 && coords.x < self.dimensions.x as i32)
+                && (coords.y > 0 && coords.y < self.dimensions.y as i32)
             {
-                self.set_cell(mx as usize, my as usize, 1u8);
+                self.set_cell(coords.x as usize, coords.y as usize, 1u8);
             }
         }
     }
@@ -181,8 +188,9 @@ impl Component for Gof {
                 if *self.get_cell(x as usize, y as usize) == 1 {
                     p = olc::Pixel::rgb(255u8, 140u8, 140u8);
                 }
-                let offset = self.screen_to_world_point(x as i32, y as i32);
-                olc::fill_rect(offset.x as i32, offset.y as i32,self.zoom as i32, self.zoom as i32, p);
+                let world_x = (x as i32 + self.offset.x as i32) * self.zoom as i32;
+                let world_y = (y as i32 + self.offset.y as i32) * self.zoom as i32;
+                olc::fill_rect(world_x as i32, world_y as i32,self.zoom as i32, self.zoom as i32, p);
 
             }
         }
