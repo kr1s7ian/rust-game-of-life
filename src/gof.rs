@@ -200,9 +200,7 @@ impl Component for Gof {
         if olc::get_mouse(0).held {
             let (mx, my) = (olc::get_mouse_x(), olc::get_mouse_y());
             let coords = self.screen_to_world_point(mx, my);
-            if (coords.x > 0 && coords.x < self.dimensions.x as i32)
-                && (coords.y > 0 && coords.y < self.dimensions.y as i32)
-            {
+            if self.intersects(coords.x as usize, coords.y as usize) {
                 self.set_cell(coords.x as usize, coords.y as usize, Cell::Alive);
             }
         }
@@ -229,6 +227,10 @@ impl Component for Gof {
                 olc::fill_rect(world_x as i32, world_y as i32,self.zoom as i32, self.zoom as i32, color);
             }
         }
+    }
+
+    fn intersects(&mut self, x: usize, y: usize) -> bool {
+        (x >= 0 && x < self.dimensions.x) && (y >= 0 && y < self.dimensions.y)
     }
 }
 
