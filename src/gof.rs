@@ -213,18 +213,20 @@ impl Component for Gof {
     }
 
     fn draw(&self) {
-        const WHITE: olc::Pixel = olc::Pixel::rgb(255u8, 255u8,255u8);
         const RED: olc::Pixel = olc::Pixel::rgb(255u8, 140u8,140u8);
 
         for y in 0..self.dimensions.y {
             for x in 0..self.dimensions.x {
                 let cell = self.get_cell(x as usize, y as usize);
-                let mut color = WHITE;
-                if cell.is_alive() { color = RED }
-
+                if cell.is_alive() {
                 let world_x = (x as i32 + self.offset.x as i32) * self.zoom as i32;
                 let world_y = (y as i32 + self.offset.y as i32) * self.zoom as i32;
-                olc::fill_rect(world_x as i32, world_y as i32,self.zoom as i32, self.zoom as i32, color);
+
+                // if the location of the cell is outside the screen dimensions, there is no point drawing it
+                if world_x <= olc::screen_width() && world_y <= olc::screen_height() {
+                    olc::fill_rect(world_x as i32, world_y as i32,self.zoom as i32, self.zoom as i32, RED);
+                }
+                }
             }
         }
     }
