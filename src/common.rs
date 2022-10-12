@@ -21,4 +21,8 @@ pub trait Component {
   fn update(&mut self, _elapsed_time: f32) {
 
   }
+
+  fn intersects(&mut self, x: usize, y: usize) -> bool {
+    false
+  }
 }
