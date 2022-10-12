@@ -19,7 +19,7 @@ impl olc::Application for Game {
   }
 
   fn on_user_update(&mut self, elapsed_time: f32) -> Result<(), olc::Error> {
-    olc::clear(olc::Pixel::rgb(140u8, 140u8, 140u8));
+    olc::clear(olc::Pixel::rgb(255u8, 255u8, 255u8));
 
     self.component_handler.poll_inputs(elapsed_time);
     self.component_handler.update(elapsed_time);
@@ -35,5 +35,5 @@ fn main() {
   let mut game = Game {
     component_handler: ComponentHandler::new(),
   };
-  olc::start("rust-game-of-life", &mut game, 1920/5, 1080/5, 1, 1).unwrap();
+  olc::start("rust-game-of-life", &mut game, 1920, 1080, 1, 1).unwrap();
 }
